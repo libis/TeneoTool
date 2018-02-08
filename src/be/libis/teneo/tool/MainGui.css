@@ -1,0 +1,24 @@
+.StatusOK {
+    -fx-text-fill: limegreen;
+}
+
+.StatusNew {
+    -fx-text-fill: blue;
+
+}
+
+.StatusChanged {
+    -fx-text-fill: chocolate;
+}
+
+.StatusDeleted {
+    -fx-text-fill: crimson;
+}
+
+.StatusIgnored {
+    -fx-text-fill: darkgrey;
+}
+
+.StatusIgnore {
+    -fx-text-fill: slategray;
+}
