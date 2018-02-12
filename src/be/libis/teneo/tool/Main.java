@@ -7,14 +7,17 @@ import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
+import java.util.Locale;
+import java.util.ResourceBundle;
+
 public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception{
-        primaryStage.getIcons().add(new Image("file:resources/logo_64x64.png"));
-        Parent root = FXMLLoader.load(getClass().getResource("MainGui.fxml"));
+        primaryStage.getIcons().add(new Image("images/logo_64x64.png"));
+        Parent root = FXMLLoader.load(getClass().getResource("MainGui.fxml"), ResourceBundle.getBundle("TeneoTool", Locale.ENGLISH));
         primaryStage.setTitle("LIBIS Teneo Tool");
-        primaryStage.setScene(new Scene(root, 800, 600));
+        primaryStage.setScene(new Scene(root, 960, 700));
         primaryStage.show();
     }
 

@@ -1,8 +1,9 @@
 package be.libis.teneo.tool.model;
 
-import com.sun.javafx.collections.ObservableListWrapper;
 import javafx.beans.property.*;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,7 +12,6 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,7 +20,6 @@ public class FileData {
     public enum Status {OK, NEW, DELETED, CHANGED, IGNORED, IGNORE}
 
     @SuppressWarnings("FieldCanBeLocal")
-    private final List<FileInfo> fileInfoList;
     private final ObservableList<FileInfo> fileInfos;
     private final SimpleIntegerProperty countOK;
     private final SimpleIntegerProperty countNew;
@@ -29,8 +28,7 @@ public class FileData {
     private final SimpleIntegerProperty countIgnored;
 
     public FileData() {
-        fileInfoList = new ArrayList<>(0);
-        fileInfos = new ObservableListWrapper<>(fileInfoList);
+        fileInfos = FXCollections.observableArrayList();
         countOK = new SimpleIntegerProperty(0);
         countNew = new SimpleIntegerProperty(0);
         countChanged = new SimpleIntegerProperty(0);
@@ -67,12 +65,49 @@ public class FileData {
         resetCount();
     }
 
+    public void cleanup() {
+        removeAll(fileInfos.filtered(fileInfo -> fileInfo.getStatus().equals(Status.DELETED)));
+        fileInfos.forEach(fileInfo -> {
+            fileInfo.ignoreStored.set(false);
+            switch (fileInfo.getStatus()) {
+                case OK:
+                    break;
+                case IGNORED:
+                    fileInfo.ignoreStored.set(true);
+                    break;
+                case NEW:
+                    fileInfo.setStatus(Status.OK);
+                    break;
+                case IGNORE:
+                    fileInfo.setStatus(Status.IGNORED);
+                    fileInfo.ignoreStored.set(true);
+                    break;
+                case CHANGED:
+                    fileInfo.setStatus(Status.OK);
+                    break;
+                case DELETED:
+                    fileInfos.removeAll(fileInfo);
+                    break;
+            }
+        });
+    }
+
     public void add(FileInfo fileInfo) {
         fileInfos.add(fileInfo);
         incrementCount(fileInfo.getStatus());
         fileInfo.statusProperty().addListener((observable, oldValue, newValue) -> {
             decrementCount(Status.valueOf(oldValue));
             incrementCount(Status.valueOf(newValue));
+        });
+    }
+
+    private void removeAll(FilteredList<FileInfo> fileInfoList) {
+        ArrayList<Integer> indexes = new ArrayList<>(fileInfoList.size());
+        fileInfoList.forEach(fileInfo -> indexes.add(fileInfos.indexOf(fileInfo)));
+        indexes.forEach(i -> {
+            FileInfo fileInfo = fileInfos.get(i);
+            decrementCount(fileInfo.getStatus());
+            fileInfos.remove(fileInfo);
         });
     }
 
@@ -215,27 +250,27 @@ public class FileData {
             updateStatus();
         }
 
-        @SuppressWarnings("unused")
+        @SuppressWarnings({"unused", "WeakerAccess"})
         public StringProperty fileProperty() {
             return file;
         }
 
-        @SuppressWarnings("unused")
+        @SuppressWarnings({"unused", "WeakerAccess"})
         public StringProperty checksumStoredProperty() {
             return checksumStored;
         }
 
-        @SuppressWarnings("unused")
+        @SuppressWarnings({"unused", "WeakerAccess"})
         public StringProperty checksumCalculatedProperty() {
             return checksumCalculated;
         }
 
-        @SuppressWarnings("unused")
+        @SuppressWarnings({"unused", "WeakerAccess"})
         public StringProperty statusProperty() {
             return status;
         }
 
-        @SuppressWarnings("unused")
+        @SuppressWarnings({"unused", "WeakerAccess"})
         public BooleanProperty ignoreSelectedProperty() {
             return ignoreSelected;
         }
@@ -257,12 +292,13 @@ public class FileData {
             return checksumCalculated.get();
         }
 
+        @SuppressWarnings("WeakerAccess")
         public Status getStatus() {
             return Status.valueOf(status.get());
         }
 
         public boolean isIgnored() {
-            return getStatus() == Status.IGNORE;
+            return getStatus() == Status.IGNORE || getStatus() == Status.IGNORED;
         }
 
         public boolean isDirty() {

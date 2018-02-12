@@ -1,3 +1,4 @@
 Manifest-Version: 1.0
 Main-Class: be.libis.teneo.tool.Main
-
+Application-Name: Teneo Tool
+Application-Description: This toolkit contains small aids that help the providers of digital data to prepare their submissions for Teneo.

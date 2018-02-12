@@ -1,9 +1,11 @@
 package be.libis.teneo.tool;
 
 import be.libis.teneo.tool.model.FileData;
+import be.libis.teneo.tool.model.I18N;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.KeyCode;
@@ -13,11 +15,15 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
+import javafx.util.Callback;
+import javafx.util.StringConverter;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.text.MessageFormat;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,7 +38,6 @@ public class MainController {
     public TableView<FileData.FileInfo> tblDetails;
     public TableColumn<FileData.FileInfo, String> colFilename;
     public TableColumn<FileData.FileInfo, String> colStatus;
-    public TableColumn<FileData.FileInfo, String> colChecksum;
     public HBox hboxResults;
     public HBox hboxOk;
     public Label lblOk;
@@ -58,6 +63,7 @@ public class MainController {
     public Button btnUpdate;
     public Button btnSuccess;
     public Button btnCancel;
+    public ComboBox<Locale> cbxLanguage;
 
     private SimpleStringProperty selectedFolder;
     private FileData fileData;
@@ -74,9 +80,10 @@ public class MainController {
 
     public void initialize() {
         setState(InternalState.INIT);
+        i18n();
+
         colFilename.setCellValueFactory(new PropertyValueFactory<>("name"));
         colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
-        colChecksum.setCellValueFactory(new PropertyValueFactory<>("checksumCalculated"));
         tblDetails.setItems(fileData.getFileInfos());
         fileData.countOKProperty().addListener((observable, oldValue, newValue) -> lblOkCount.setText(newValue.toString()));
         fileData.countNewProperty().addListener((observable, oldValue, newValue) -> lblNewCount.setText(newValue.toString()));
@@ -86,6 +93,34 @@ public class MainController {
         selectedFolder.addListener((observable, oldValue, newValue) -> checkChecksums(newValue));
         btnUpdate.setOnAction(event -> writeChecksum());
         btnSuccess.setOnAction(event -> checkChecksums(this.selectedFolder.get()));
+        setupTable();
+    }
+
+    private void setupTable() {
+        colStatus.setCellFactory(new Callback<TableColumn<FileData.FileInfo, String>, TableCell<FileData.FileInfo, String>>() {
+            @Override
+            public TableCell<FileData.FileInfo, String> call(TableColumn<FileData.FileInfo, String> param) {
+                return new TableCell<FileData.FileInfo, String>() {
+                    @Override
+                    protected void updateItem(String item, boolean empty) {
+                        super.updateItem(item, empty);
+                        try {
+                            FileData.FileInfo fileInfo = getTableView().getItems().get(getTableRow().getIndex());
+                            Tooltip tooltip = new Tooltip();
+                            tooltip.setText(MessageFormat.format(
+                                    "{0}: {1}\nCalculated: {2}",
+                                    ChecksumTask.CHECKSUM_FILE,
+                                    fileInfo.checksumStoredProperty().get(),
+                                    fileInfo.getChecksum()));
+                            setTooltip(tooltip);
+                            setText(item);
+                        } catch (IndexOutOfBoundsException ignored) {
+                        }
+                    }
+
+                };
+            }
+        });
         tblDetails.setRowFactory(tableView -> {
             final TableRow<FileData.FileInfo> row = new TableRow<>();
             final ContextMenu contextMenu = new ContextMenu();
@@ -110,6 +145,36 @@ public class MainController {
                 toggleIgnored(tblDetails.getSelectionModel().getSelectedItem());
             }
         });
+
+    }
+
+    private void i18n() {
+        cbxLanguage.setItems(FXCollections.observableList(I18N.getSupportedLocales()));
+        cbxLanguage.setConverter(new StringConverter<Locale>() {
+            @Override
+            public String toString(Locale object) {
+                return object.getLanguage();
+            }
+
+            @Override
+            public Locale fromString(String string) {
+                return null;
+            }
+        });
+        cbxLanguage.getSelectionModel().select(I18N.getDefaultLocale());
+        cbxLanguage.setOnAction(event -> I18N.setLocale(cbxLanguage.getSelectionModel().getSelectedItem()));
+        I18N.setText(btnFolder, "btn.Folder");
+        I18N.setText(btnCancel, "btn.Cancel");
+        I18N.setText(lblChanged, "lbl.Changed");
+        I18N.setText(lblDeleted, "lbl.Deleted");
+        I18N.setText(lblIgnored, "lbl.Ignored");
+        I18N.setText(lblNew, "lbl.New");
+        I18N.setText(lblOk, "lbl.OK");
+        I18N.setText(colFilename, "col.FileName");
+        I18N.setText(colStatus, "col.Status");
+        I18N.setText(cbxLanguage, "cbx.Language");
+        I18N.setText(btnSuccess, "btn.Success");
+        I18N.setText(btnUpdate, "btn.Update");
     }
 
     private void toggleIgnored(FileData.FileInfo fileInfo) {
@@ -165,11 +230,15 @@ public class MainController {
         DirectoryChooser chooser = new DirectoryChooser();
         chooser.setTitle("Select directory to scan");
         if (!"".equals(selectedFolder.get())) {
-            chooser.setInitialDirectory(new File(selectedFolder.get()).getParentFile());
+            chooser.setInitialDirectory(new File(selectedFolder.get()));
         }
         File folder = chooser.showDialog(vboxMain.getScene().getWindow());
         if (folder != null)
-            selectedFolder.set(folder.getAbsolutePath());
+            if (selectedFolder.get().equals(folder.getAbsolutePath())) {
+                checkChecksums(folder.getAbsolutePath());
+            } else {
+                selectedFolder.set(folder.getAbsolutePath());
+            }
     }
 
     private boolean checksumsChanged() {
@@ -209,10 +278,10 @@ public class MainController {
             alert.setHeaderText(null);
             alert.setContentText("Checksum file saved.");
             alert.showAndWait();
-            checkChecksums(this.selectedFolder.get());
+            this.fileData.cleanup();
+            setState(InternalState.DONE);
         } catch (FileNotFoundException | UnsupportedEncodingException ex) {
             Logger.getLogger("MD5Checker").log(Level.SEVERE, null, ex);
         }
     }
-
 }
