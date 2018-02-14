@@ -102,10 +102,9 @@ public class FileData {
     }
 
     private void removeAll(FilteredList<FileInfo> fileInfoList) {
-        ArrayList<Integer> indexes = new ArrayList<>(fileInfoList.size());
-        fileInfoList.forEach(fileInfo -> indexes.add(fileInfos.indexOf(fileInfo)));
-        indexes.forEach(i -> {
-            FileInfo fileInfo = fileInfos.get(i);
+        ArrayList<FileInfo> fileInfoArrayList = new ArrayList<>(fileInfoList.size());
+        fileInfoArrayList.addAll(fileInfoList);
+        fileInfoArrayList.forEach(fileInfo -> {
             decrementCount(fileInfo.getStatus());
             fileInfos.remove(fileInfo);
         });

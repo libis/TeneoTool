@@ -45,8 +45,14 @@ public class I18N {
         Locale.setDefault(locale);
     }
 
+    public static void setLocale(String localeName) {
+        Optional<Locale> locale = getSupportedLocales().stream()
+                .filter(item -> item.getDisplayLanguage(item).equals(localeName)).findFirst();
+        locale.ifPresent(I18N::setLocale);
+    }
+
     public static String get(final String key, final Object... args) {
-        ResourceBundle bundle = ResourceBundle.getBundle("TeneoTool",getLocale());
+        ResourceBundle bundle = ResourceBundle.getBundle("TeneoTool", getLocale());
         return MessageFormat.format(bundle.getString(key), args);
     }
 
@@ -73,7 +79,7 @@ public class I18N {
     public static Tooltip tooltipForKey(final String key, final Object... args) {
         Tooltip tooltip = new Tooltip();
         tooltip.textProperty().bind(createStringBinding(key, args));
-        return  tooltip;
+        return tooltip;
     }
 
     public static void setText(Object node, final String key, Object... args) {
