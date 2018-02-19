@@ -15,16 +15,10 @@
                        <MenuItem fx:id="miClose" mnemonicParsing="false" text="Close" />
                    </items>
                </Menu>
-               <Menu fx:id="mnuEdit" mnemonicParsing="false" text="Edit">
-                   <items>
-                       <MenuItem fx:id="miDesktopShortcut" mnemonicParsing="false" text="Create desktop shortcut" />
-                       <MenuItem fx:id="miMenuShortcut" mnemonicParsing="false" text="Create menu shortcut" />
-                   </items>
-               </Menu>
                <Menu fx:id="mnuTools" mnemonicParsing="false" text="Tools">
                    <items>
                        <MenuItem fx:id="miMd5" mnemonicParsing="false" text="MD5 Checker" />
-                       <MenuItem fx:id="miUpload" mnemonicParsing="false" text="Uploader" />
+                       <MenuItem fx:id="miUpload" mnemonicParsing="false" text="Uploader" visible="false" />
                    </items>
                </Menu>
                <Menu fx:id="mnuHelp" mnemonicParsing="false" text="Help">

@@ -5,7 +5,6 @@ import javafx.beans.binding.StringBinding;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.StringProperty;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 
 import java.lang.reflect.InvocationTargetException;
@@ -20,16 +19,21 @@ public class I18N {
 
     static {
         locale = new SimpleObjectProperty<>(getDefaultLocale());
-        locale.addListener((observable, oldValue, newValue) -> Locale.setDefault(newValue));
+        locale.addListener((observable, oldValue, newValue) -> {
+            Locale.setDefault(newValue);
+            UserSettings.setLocale(newValue);
+        });
     }
 
     public static Locale getDefaultLocale() {
+        Locale userDefault = UserSettings.getLocale();
+        if (getSupportedLocales().contains(userDefault)) return userDefault;
         Locale sysDefault = Locale.getDefault();
         return getSupportedLocales().contains(sysDefault) ? sysDefault : Locale.ENGLISH;
     }
 
     public static List<Locale> getSupportedLocales() {
-        return new ArrayList<>(Arrays.asList(Locale.ENGLISH, new Locale("nl", "BE")));
+        return new ArrayList<>(Arrays.asList(Locale.ENGLISH, new Locale("nl", "")));
     }
 
     public static ObjectProperty<Locale> localeProperty() {
@@ -37,12 +41,11 @@ public class I18N {
     }
 
     public static Locale getLocale() {
-        return locale.get();
+        return localeProperty().get();
     }
 
     public static void setLocale(Locale locale) {
         localeProperty().set(locale);
-        Locale.setDefault(locale);
     }
 
     public static void setLocale(String localeName) {
@@ -57,11 +60,11 @@ public class I18N {
     }
 
     public static StringBinding createStringBinding(final String key, Object... args) {
-        return Bindings.createStringBinding(() -> get(key, args), locale);
+        return Bindings.createStringBinding(() -> get(key, args), localeProperty());
     }
 
     public static StringBinding createStringBinding(Callable<String> func) {
-        return Bindings.createStringBinding(func, locale);
+        return Bindings.createStringBinding(func, localeProperty());
     }
 
     public static Label labelForValue(Callable<String> func) {
@@ -90,6 +93,5 @@ public class I18N {
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {
         }
     }
-
 
 }

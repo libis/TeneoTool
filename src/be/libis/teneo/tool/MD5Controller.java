@@ -2,6 +2,7 @@ package be.libis.teneo.tool;
 
 import be.libis.teneo.tool.model.FileData;
 import be.libis.teneo.tool.model.I18N;
+import be.libis.teneo.tool.model.UserSettings;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
@@ -36,7 +37,6 @@ public class MD5Controller {
     public TableView<FileData.FileInfo> tblDetails;
     public TableColumn<FileData.FileInfo, String> colFilename;
     public TableColumn<FileData.FileInfo, String> colStatus;
-    public HBox hboxResults;
     public HBox hboxOk;
     public Label lblOk;
     public Label lblOkCount;
@@ -219,16 +219,19 @@ public class MD5Controller {
     public void selectFolder() {
         DirectoryChooser chooser = new DirectoryChooser();
         chooser.setTitle("Select directory to scan");
-        if (!"".equals(selectedFolder.get())) {
-            chooser.setInitialDirectory(new File(selectedFolder.get()));
+        if (!UserSettings.getDir().equals("")) {
+            File dir = new File(UserSettings.getDir());
+            if (dir.exists()) chooser.setInitialDirectory(dir);
         }
         File folder = chooser.showDialog(vboxMain.getScene().getWindow());
-        if (folder != null)
+        if (folder != null) {
             if (selectedFolder.get().equals(folder.getAbsolutePath())) {
                 checkChecksums(folder.getAbsolutePath());
             } else {
                 selectedFolder.set(folder.getAbsolutePath());
             }
+            UserSettings.setDir(selectedFolder.get());
+        }
     }
 
     private boolean checksumsChanged() {
