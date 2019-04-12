@@ -14,7 +14,7 @@ public class ChecksumTask extends Task {
     private final File folder;
     private final FileData fileData;
     private final Map<String, ChecksumInfo> checksumInfo;
-    static final String CHECKSUM_FILE = "md5sums";
+    static final String CHECKSUM_FILE = "checksums.md5";
 
     ChecksumTask(File folder, FileData fileData) {
         this.folder = folder;
